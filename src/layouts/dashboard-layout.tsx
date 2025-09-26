@@ -9,7 +9,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full  bg-background">
         <DashboardSidebar />
         
         <div className="flex-1 flex flex-col">
@@ -23,3 +23,5 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     </SidebarProvider>
   )
 }
+
+

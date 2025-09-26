@@ -6,6 +6,7 @@
 
 @layer base {
   :root {
+    /* Light Mode - كما هو */
     /* Core Background & Text */
     --background: 0 0% 100%;
     --foreground: 220 13% 18%;
@@ -61,9 +62,6 @@
     --shadow-md: 0 4px 6px -1px hsl(220 13% 18% / 0.1), 0 2px 4px -1px hsl(220 13% 18% / 0.06);
     --shadow-lg: 0 10px 15px -3px hsl(220 13% 18% / 0.1), 0 4px 6px -2px hsl(220 13% 18% / 0.05);
 
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0.2, 1);
-
     /* Sidebar Light */
     --sidebar-background: 220 13% 98%;
     --sidebar-foreground: 220 13% 18%;
@@ -76,67 +74,68 @@
   }
 
   .dark {
+    /* Dark Mode - خلفية سوداء وكلام أبيض */
     /* Core Background & Text */
-    --background: 220 13% 9%;
-    --foreground: 220 13% 98%;
+    --background: 0 0% 0%; /* أسود كامل */
+    --foreground: 0 0% 100%; /* أبيض كامل */
 
     /* Card System */
-    --card: 220 13% 12%;
-    --card-foreground: 220 13% 98%;
+    --card: 0 0% 5%; /* أسود غامق */
+    --card-foreground: 0 0% 100%; /* أبيض */
 
     /* Popover */
-    --popover: 220 13% 12%;
-    --popover-foreground: 220 13% 98%;
+    --popover: 0 0% 8%; /* أسود غامق */
+    --popover-foreground: 0 0% 100%; /* أبيض */
 
-    /* Professional Blue Primary (brighter in dark) */
-    --primary: 217 91% 65%;
-    --primary-foreground: 220 13% 9%;
-    --primary-hover: 217 91% 70%;
+    /* Professional Blue Primary (أكثر إشراقاً) */
+    --primary: 217 91% 70%;
+    --primary-foreground: 0 0% 0%; /* أسود */
+    --primary-hover: 217 91% 75%;
 
     /* Subtle Secondary */
-    --secondary: 220 13% 15%;
-    --secondary-foreground: 220 13% 98%;
+    --secondary: 0 0% 10%; /* أسود غامق */
+    --secondary-foreground: 0 0% 100%; /* أبيض */
 
     /* Muted Tones */
-    --muted: 220 13% 15%;
-    --muted-foreground: 220 9% 65%;
+    --muted: 0 0% 12%; /* أسود غامق */
+    --muted-foreground: 0 0% 80%; /* رمادي فاتح */
 
     /* Accent Colors */
-    --accent: 220 13% 15%;
-    --accent-foreground: 220 13% 98%;
+    --accent: 0 0% 15%; /* أسود غامق */
+    --accent-foreground: 0 0% 100%; /* أبيض */
 
     /* Status Colors */
-    --destructive: 0 84% 65%;
-    --destructive-foreground: 220 13% 9%;
-    --success: 142 71% 50%;
-    --success-foreground: 220 13% 9%;
-    --warning: 38 92% 55%;
-    --warning-foreground: 220 13% 9%;
+    --destructive: 0 84% 70%;
+    --destructive-foreground: 0 0% 100%; /* أبيض */
+    --success: 142 71% 55%;
+    --success-foreground: 0 0% 100%; /* أبيض */
+    --warning: 38 92% 60%;
+    --warning-foreground: 0 0% 100%; /* أبيض */
 
     /* Form Elements */
-    --border: 220 13% 20%;
-    --input: 220 13% 20%;
-    --ring: 217 91% 65%;
+    --border: 0 0% 20%; /* رمادي غامق */
+    --input: 0 0% 15%; /* أسود غامق */
+    --ring: 217 91% 70%;
 
     /* Professional Gradients (Dark) */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 65%), hsl(217 91% 75%));
-    --gradient-secondary: linear-gradient(135deg, hsl(220 13% 15%), hsl(220 13% 12%));
-    --gradient-card: linear-gradient(135deg, hsl(220 13% 12%), hsl(220 13% 15%));
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 70%), hsl(217 91% 80%));
+    --gradient-secondary: linear-gradient(135deg, hsl(0 0% 10%), hsl(0 0% 5%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 5%), hsl(0 0% 8%));
 
     /* Shadows (Dark) */
-    --shadow-sm: 0 1px 2px 0 hsl(220 13% 0% / 0.3);
-    --shadow-md: 0 4px 6px -1px hsl(220 13% 0% / 0.4), 0 2px 4px -1px hsl(220 13% 0% / 0.2);
-    --shadow-lg: 0 10px 15px -3px hsl(220 13% 0% / 0.5), 0 4px 6px -2px hsl(220 13% 0% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.5);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.6), 0 2px 4px -1px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.7), 0 4px 6px -2px hsl(0 0% 0% / 0.5);
 
     /* Sidebar Dark */
-    --sidebar-background: 220 13% 8%;
-    --sidebar-foreground: 220 13% 95%;
-    --sidebar-primary: 217 91% 65%;
-    --sidebar-primary-foreground: 220 13% 9%;
-    --sidebar-accent: 220 13% 15%;
-    --sidebar-accent-foreground: 220 13% 95%;
-    --sidebar-border: 220 13% 18%;
-    --sidebar-ring: 217 91% 65%;
+    --sidebar-background: 0 0% 5%; /* أسود غامق */
+    --sidebar-foreground: 0 0% 100%; /* أبيض */
+    --sidebar-primary: 217 91% 70%;
+    --sidebar-primary-foreground: 0 0% 0%; /* أسود */
+    --sidebar-accent: 0 0% 12%; /* أسود غامق */
+    --sidebar-accent-foreground: 0 0% 100%; /* أبيض */
+    --sidebar-border: 0 0% 20%; /* رمادي غامق */
+    --sidebar-ring: 217 91% 70%;
   }
 }
 
