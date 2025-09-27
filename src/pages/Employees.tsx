@@ -215,7 +215,12 @@ const Employees = () => {
   const deleteEmployee = async (id: number) => {
     if (!confirm("Are you sure you want to delete this employee?")) return;
     try {
-      await apiFetch(`/user/delete/${id}`, { method: "DELETE" });
+
+
+      
+      await apiFetch(`/user/delete`, { method: "DELETE"
+, data: { items: [id] }
+       });
       toast({ title: "Deleted", description: "Employee removed successfully" });
       fetchEmployees(currentPage);
     } catch (err: any) {
@@ -308,9 +313,7 @@ const Employees = () => {
                       <Button size="sm" onClick={() => navigate(`/employee/${emp.id}`)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" onClick={() => openEditModal(emp)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                     
                       <Button size="sm" variant="destructive" onClick={() => deleteEmployee(emp.id!)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>

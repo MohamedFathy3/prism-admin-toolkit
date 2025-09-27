@@ -44,7 +44,7 @@ const App = () => (
               <Route path="/orderscanceled" element={<DashboardLayout><Orderscanceled /></DashboardLayout>} />
               <Route path="/orderscompleted" element={<DashboardLayout><Orderscompleted /></DashboardLayout>} />
               <Route path="/OrderProcessing" element={<DashboardLayout><OrderProcessing /></DashboardLayout>} />
-              <Route path="/orders/create/:id" element={<DashboardLayout><CreateOrder /></DashboardLayout>} />
+              <Route path="/orders/create/:customerId" element={<DashboardLayout><CreateOrder /></DashboardLayout>} />
               <Route path="/packages" element={<DashboardLayout><Packages /></DashboardLayout>} />
               <Route path="/costing" element={<DashboardLayout><Costing /></DashboardLayout>} />
               <Route path="/invoices" element={<DashboardLayout><Invoices /></DashboardLayout>} />

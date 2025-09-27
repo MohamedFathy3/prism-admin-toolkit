@@ -3,7 +3,7 @@ import { Dialog, Transition } from "@headlessui/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/api/api";
 
@@ -13,6 +13,7 @@ interface Product {
   price: number;
   stock: number;
   image: string;
+  barcode?: string;
 }
 
 interface PackProduct {
@@ -44,7 +45,8 @@ const Packs = () => {
     name: "", 
     price: "", 
     stock: "", 
-    image: null as File | null 
+    image: null as File | null,
+    imagePreview: "" 
   });
   const [selectedProducts, setSelectedProducts] = useState<PackProduct[]>([]);
 
@@ -56,6 +58,7 @@ const Packs = () => {
   // Edit Pack
   const [editPack, setEditPack] = useState<Pack | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editImagePreview, setEditImagePreview] = useState("");
 
   // --- Fetch Packs ---
   const fetchPacks = async (page = 1) => {
@@ -124,6 +127,87 @@ const Packs = () => {
     }
   };
 
+  // --- Upload Image Function ---
+  const uploadImage = async (file: File): Promise<number | null> => {
+    try {
+      console.log("🖼️ Starting image upload...", file.name);
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await apiFetch("/media", { 
+        method: "POST", 
+        data: formData,
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      console.log("📥 Image upload response:", res);
+
+      let imageData = null;
+      
+      if (res.data?.data) {
+        imageData = res.data.data;
+      } else if (res.data) {
+        imageData = res.data;
+      }
+
+      if (imageData && imageData.id) {
+        console.log("✅ Image uploaded successfully:", imageData);
+        return imageData.id;
+      } else {
+        console.error("❌ Image upload failed:", res.data);
+        return null;
+      }
+    } catch (err: any) {
+      console.error("❌ Upload error:", err);
+      return null;
+    }
+  };
+
+  // --- Handle Image Upload with Preview ---
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewPack({
+        ...newPack,
+        image: file,
+        imagePreview: URL.createObjectURL(file)
+      });
+    }
+  };
+
+  // --- Handle Edit Image Upload ---
+  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editPack) {
+      setEditPack({
+        ...editPack,
+        image: file
+      });
+      setEditImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // --- Clear Image ---
+  const clearImage = () => {
+    setNewPack({
+      ...newPack,
+      image: null,
+      imagePreview: ""
+    });
+  };
+
+  // --- Clear Edit Image ---
+  const clearEditImage = () => {
+    if (editPack) {
+      setEditPack({
+        ...editPack,
+        image: "" // إعادة إلى الصورة الأصلية
+      });
+      setEditImagePreview("");
+    }
+  };
+
   // --- Product Modal Handlers ---
   const openProductModal = (pack?: Pack) => {
     if (pack) {
@@ -169,74 +253,7 @@ const Packs = () => {
     );
   };
 
-  // --- رفع الصورة أولاً ثم إضافة الباك ---
-  const [uploading, setUploading] = useState(false);
-
- const uploadImage = async (files: FileList) => {
-    setUploading(true);
-    try {
-      console.log("🖼️ Starting image upload...", { fileCount: files.length });
-
-      const uploadPromises = Array.from(files).map(async (file, index) => {
-        console.log(`📤 Uploading file ${index + 1}:`, file.name);
-        
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const res = await apiFetch("/media", { 
-          method: "POST", 
-          data: formData,
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-
-        console.log(`📥 Image upload response ${index + 1}:`, res);
-
-        // البحث عن بيانات الصورة في أماكن مختلفة من الـ response
-        let imageData = null;
-        
-        if (res.data?.data) {
-          imageData = res.data.data;
-        } else if (res.data) {
-          imageData = res.data;
-        }
-
-        if (imageData && imageData.id) {
-          console.log(`✅ Image uploaded successfully:`, imageData);
-          return { 
-            id: imageData.id, 
-            previewUrl: imageData.previewUrl || imageData.fullUrl || imageData.url || URL.createObjectURL(file),
-            fullUrl: imageData.fullUrl || imageData.url
-          };
-        } else {
-          console.error(`❌ Image upload failed:`, res.data);
-          return null;
-        }
-      });
-
-      const results = await Promise.all(uploadPromises);
-      const successfulUploads = results.filter((img): img is UploadedImage => img !== null);
-
-      console.log("✅ Successful uploads:", successfulUploads);
-      setUploadedImages((prev) => [...prev, ...successfulUploads]);
-      
-      if (successfulUploads.length > 0) {
-        toast({ 
-          title: "Success", 
-          description: `Uploaded ${successfulUploads.length} image(s)!` 
-        });
-      }
-    } catch (err: any) {
-      console.error("❌ Upload error:", err);
-      toast({ 
-        title: "Error", 
-        description: err.response?.data?.message || "Upload failed", 
-        variant: "destructive" 
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-  // --- Add Pack - الطريقة الصحيحة ---
+  // --- Add Pack - الإصلاح النهائي ---
   const handleAddPack = async () => {
     if (!newPack.name || !newPack.price || !newPack.stock) {
       toast({ 
@@ -256,61 +273,82 @@ const Packs = () => {
       return;
     }
 
+    // التحقق من أن كل المنتجات لها quantity
+    const invalidProducts = selectedProducts.filter(p => !p.quantity || p.quantity < 1);
+    if (invalidProducts.length > 0) {
+      toast({ 
+        title: "Error", 
+        description: "Please set quantity for all selected products", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       let imageId: number | null = null;
 
-      // رفع الصورة أولاً إذا وجدت
       if (newPack.image instanceof File) {
         imageId = await uploadImage(newPack.image);
       }
 
-      // إعداد بيانات الباك
-      const packData: any = {
+      // 🔥 الإصلاح: إرسال البيانات بالشكل الصحيح مع quantity
+      const packData = {
         name: newPack.name,
         price: parseFloat(newPack.price),
         stock: parseInt(newPack.stock),
-        products: selectedProducts
+        products: selectedProducts.map(product => ({
+          id: product.id,
+          quantity: product.quantity // ✅ التأكد من إرسال quantity
+        }))
       };
 
-      // إضافة ID الصورة إذا تم رفعها
-      if (imageId) {
-        packData.image = imageId;
-      }
+      // إذا كان لدينا imageId نضيفه
+      const finalData = imageId ? { ...packData, image: imageId } : packData;
 
-      console.log("Sending pack data:", packData);
+      console.log("📤 Sending pack data:", JSON.stringify(finalData, null, 2));
 
-      // إرسال بيانات الباك
       const res = await apiFetch("/pack", {
         method: "POST", 
-        data: packData,
+        data: finalData,
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      console.log("Add pack response:", res);
+      console.log("📥 Add pack response:", res);
 
-      if (res.data && res.data.success) {
+      if (res.data?.success || res.data?.id || res.status === 200 || res.status === 201) {
         toast({ 
           title: "Success", 
           description: "Pack added successfully" 
         });
         
         // إعادة تعيين النموذج
-        setNewPack({ name: "", price: "", stock: "", image: null });
+        setNewPack({ name: "", price: "", stock: "", image: null, imagePreview: "" });
         setSelectedProducts([]);
-        fetchPacks(currentPage);
+        
+        // تحديث القائمة
+        await fetchPacks(1);
       } else {
         throw new Error(res.data?.message || "Failed to add pack");
       }
     } catch (err: any) {
-      console.error("Error adding pack:", err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.errors?.products?.[0] || 
-                          err.message || 
-                          "Failed to add pack";
+      console.error("❌ Error adding pack:", err);
+      
+      let errorMessage = "Failed to add pack";
+      
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        const errorMessages = Object.values(errors).flat().join(', ');
+        errorMessage = errorMessages;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       toast({ 
         title: "Error", 
         description: errorMessage, 
@@ -321,7 +359,7 @@ const Packs = () => {
     }
   };
 
-  // --- Edit Pack - الطريقة الصحيحة ---
+  // --- Edit Pack - الإصلاح النهائي ---
   const handleEditPack = async () => {
     if (!editPack) return;
 
@@ -343,12 +381,22 @@ const Packs = () => {
       return;
     }
 
+    // التحقق من أن كل المنتجات لها quantity
+    const invalidProducts = editPack.products.filter(p => !p.quantity || p.quantity < 1);
+    if (invalidProducts.length > 0) {
+      toast({ 
+        title: "Error", 
+        description: "Please set quantity for all selected products", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       let imageId: number | undefined;
 
-      // رفع الصورة الجديدة إذا وجدت
       if (editPack.image instanceof File) {
         const uploadedImageId = await uploadImage(editPack.image);
         if (uploadedImageId) {
@@ -356,50 +404,63 @@ const Packs = () => {
         }
       }
 
-      // إعداد بيانات الباك للتحديث
-      const packData: any = {
+      // 🔥 الإصلاح: إرسال البيانات بالشكل الصحيح مع quantity
+      const packData = {
         name: editPack.name,
         price: editPack.price,
         stock: editPack.stock,
-        products: editPack.products,
+        products: editPack.products.map(product => ({
+          id: product.id,
+          quantity: product.quantity // ✅ التأكد من إرسال quantity
+        })),
         _method: "PUT"
       };
 
-      // إضافة ID الصورة الجديدة إذا تم رفعها
-      if (imageId) {
-        packData.image = imageId;
-      }
+      // إذا كان لدينا imageId نضيفه
+      const finalData = imageId ? { ...packData, image: imageId } : packData;
 
-      console.log("Sending edit pack data:", packData);
+      console.log("📤 Sending edit pack data:", JSON.stringify(finalData, null, 2));
 
-      // إرسال بيانات التحديث
-      const res = await apiFetch(`/pack/update/${editPack.id}`, {
+      const res = await apiFetch(`/pack/${editPack.id}`, {
         method: "POST",
-        data: packData,
+        data: finalData,
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      console.log("Edit pack response:", res);
+      console.log("📥 Edit pack response:", res);
 
-      if (res.data && res.data.success) {
+      if (res.data?.success || res.status === 200 || res.status === 201) {
         toast({ 
           title: "Success", 
           description: "Pack updated successfully" 
         });
+        
+        // تحديث القائمة
+        await fetchPacks(currentPage);
+        
         setEditModalOpen(false);
         setEditPack(null);
-        fetchPacks(currentPage);
+        setEditImagePreview("");
       } else {
         throw new Error(res.data?.message || "Failed to update pack");
       }
     } catch (err: any) {
-      console.error("Error updating pack:", err);
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.errors?.products?.[0] || 
-                          err.message || 
-                          "Failed to update pack";
+      console.error("❌ Error updating pack:", err);
+      
+      let errorMessage = "Failed to update pack";
+      
+      if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        const errorMessages = Object.values(errors).flat().join(', ');
+        errorMessage = errorMessages;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       toast({ 
         title: "Error", 
         description: errorMessage, 
@@ -412,26 +473,25 @@ const Packs = () => {
 
   // --- Delete Pack ---
   const deletePack = async (id: number) => {
-  if (!confirm("Are you sure?")) return;
-  
-  try {
-    console.log("🚀 Sending payload to API:", { items: [id] });
+    if (!confirm("Are you sure?")) return;
     
-    await apiFetch(`/pack/delete`, {
-      method: "DELETE",
-      data: { items: [id] }, // ← استخدم data بدل body
-    });
-    
-    toast({ title: "Deleted", description: "pack deleted" });
-    fetchPacks(currentPage);
-  } catch (err: any) {
-    console.error("❌ Delete error:", err);
-    toast({ 
-      title: "Error", 
-      description: err.response?.data?.message || "Delete failed", 
-      variant: "destructive" 
-    });
-  }
+    try {
+      await apiFetch(`/pack/delete`, {
+        method: "DELETE",
+        data: { items: [id] },
+      });
+      
+      toast({ title: "Deleted", description: "Pack deleted" });
+      setPacks(prev => prev.filter(pack => pack.id !== id));
+      
+    } catch (err: any) {
+      console.error("❌ Delete error:", err);
+      toast({ 
+        title: "Error", 
+        description: err.response?.data?.message || "Delete failed", 
+        variant: "destructive" 
+      });
+    }
   };
 
   // --- Pagination ---
@@ -443,75 +503,125 @@ const Packs = () => {
 
   // إعادة تعيين النموذج
   const resetForm = () => {
-    setNewPack({ name: "", price: "", stock: "", image: null });
+    setNewPack({ name: "", price: "", stock: "", image: null, imagePreview: "" });
     setSelectedProducts([]);
   };
 
   // فتح مودال التعديل
   const openEditModal = (pack: Pack) => {
     setEditPack({ 
-      ...pack, 
-      image: pack.image as any // الحفاظ على الصورة الحالية كـ string
+      ...pack
     });
+    setEditImagePreview(pack.image);
     setEditModalOpen(true);
+  };
+
+  // الحصول على اسم المنتج من الـ ID
+  const getProductName = (productId: number) => {
+    const product = products.find(p => p.id === productId);
+    return product ? product.name : `Product #${productId}`;
+  };
+
+  // الحصول على صورة المنتج من الـ ID
+  const getProductImage = (productId: number) => {
+    const product = products.find(p => p.id === productId);
+    return product ? product.image : "";
   };
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Pack Management</h1>
+      <h1 className="text-2xl font-bold dark:text-white">Pack Management</h1>
 
       {/* Add Pack Form */}
-      <div className="bg-card p-4 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">Add New Pack</h2>
+      <div className="bg-card p-6 rounded-lg border dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-4 dark:text-white">Add New Pack</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <Input 
-            placeholder="Pack Name *" 
-            value={newPack.name} 
-            onChange={e => setNewPack({ ...newPack, name: e.target.value })} 
-          />
-          <Input 
-            placeholder="Price *" 
-            type="number" 
-            step="0.01"
-            min="0"
-            value={newPack.price} 
-            onChange={e => setNewPack({ ...newPack, price: e.target.value })} 
-          />
-          <Input 
-            placeholder="Stock *" 
-            type="number" 
-            min="0"
-            value={newPack.stock} 
-            onChange={e => setNewPack({ ...newPack, stock: e.target.value })} 
-          />
-          <Input 
-            type="file" 
-            accept="image/*"
-            onChange={e => setNewPack({ ...newPack, image: e.target.files?.[0] || null })} 
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <Input 
+              placeholder="Pack Name *" 
+              value={newPack.name} 
+              onChange={e => setNewPack({ ...newPack, name: e.target.value })} 
+            />
+            <Input 
+              placeholder="Price *" 
+              type="number" 
+              step="0.01"
+              min="0"
+              value={newPack.price} 
+              onChange={e => setNewPack({ ...newPack, price: e.target.value })} 
+            />
+            <Input 
+              placeholder="Stock *" 
+              type="number" 
+              min="0"
+              value={newPack.stock} 
+              onChange={e => setNewPack({ ...newPack, stock: e.target.value })} 
+            />
+          </div>
+
+          {/* Image Upload */}
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center">
+              {newPack.imagePreview ? (
+                <div className="relative">
+                  <img 
+                    src={newPack.imagePreview} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded-lg mx-auto"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute -top-2 -right-2"
+                    onClick={clearImage}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="py-8 relative">
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Click to upload pack image</p>
+                  <Input 
+                    type="file" 
+                    accept="image/*"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleImageUpload}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        <Button onClick={() => openProductModal()} className="mb-4">
+        <Button onClick={() => openProductModal()} className="mb-4 w-full">
+          <Plus className="mr-2 h-4 w-4" />
           Select Products ({selectedProducts.length})
         </Button>
 
         {/* Selected Products Preview */}
         {selectedProducts.length > 0 && (
           <div className="mt-4 space-y-2">
-            <h3 className="font-medium">Selected Products:</h3>
-            {selectedProducts.map(sp => {
-              const product = products.find(p => p.id === sp.id);
-              return product ? (
-                <div key={sp.id} className="flex items-center justify-between border p-2 rounded">
-                  <div className="flex items-center gap-2">
-                    <img 
-                      src={product.image} 
-                      alt={product.name} 
-                      className="w-12 h-12 object-cover rounded" 
-                    />
-                    <span>{product.name} (${product.price})</span>
+            <h3 className="font-medium dark:text-white">Selected Products:</h3>
+            {selectedProducts.map(sp => (
+              <div key={sp.id} className="flex items-center justify-between border p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={getProductImage(sp.id)} 
+                    alt={getProductName(sp.id)} 
+                    className="w-10 h-10 object-cover rounded" 
+                  />
+                  <div>
+                    <div className="font-medium dark:text-white">{getProductName(sp.id)}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Product ID: {sp.id}
+                    </div>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm dark:text-white">Quantity:</span>
                   <Input 
                     type="number" 
                     className="w-20" 
@@ -524,16 +634,16 @@ const Packs = () => {
                     )} 
                   />
                 </div>
-              ) : null;
-            })}
+              </div>
+            ))}
           </div>
         )}
 
-        <div className="flex gap-2 mt-4">
-          <Button variant="outline" onClick={resetForm}>
+        <div className="flex gap-2 mt-6">
+          <Button variant="outline" onClick={resetForm} className="flex-1">
             Reset
           </Button>
-          <Button onClick={handleAddPack} disabled={loading}>
+          <Button onClick={handleAddPack} disabled={loading} className="flex-1">
             <Plus className="mr-2 h-4 w-4" /> 
             {loading ? "Adding..." : "Add Pack"}
           </Button>
@@ -541,47 +651,62 @@ const Packs = () => {
       </div>
 
       {/* Packs Table */}
-      <div className="bg-card p-4 rounded-lg border">
-        <h2 className="text-lg font-semibold mb-4">Packs List</h2>
+      <div className="bg-card p-6 rounded-lg border dark:border-gray-700">
+        <h2 className="text-lg font-semibold mb-4 dark:text-white">Packs List</h2>
         
         {loading ? (
-          <div className="text-center py-8">Loading packs...</div>
+          <div className="text-center py-8 dark:text-white">Loading packs...</div>
         ) : (
           <>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>Products</TableHead>
+                  <TableHead>Products & Quantities</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {packs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8 dark:text-white">
                       No packs found
                     </TableCell>
                   </TableRow>
                 ) : (
                   packs.map(pack => (
-                    <TableRow key={pack.id}>
-                      <TableCell className="font-medium">{pack.name}</TableCell>
-                      <TableCell>${pack.price}</TableCell>
-                      <TableCell>{pack.stock}</TableCell>
+                    <TableRow key={pack.id} className="dark:border-gray-700">
                       <TableCell>
-                        {pack.products.map(p => {
-                          const product = products.find(pr => pr.id === p.id);
-                          return product ? (
-                            <div key={p.id} className="text-sm">
-                              {product.name} × {p.quantity}
+                        <img 
+                          src={pack.image} 
+                          alt={pack.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium dark:text-white">{pack.name}</TableCell>
+                      <TableCell className="dark:text-white">${pack.price}</TableCell>
+                      <TableCell className="dark:text-white">{pack.stock}</TableCell>
+                      <TableCell>
+                        <div className="space-y-2">
+                          {pack.products.map(p => (
+                            <div key={p.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                              <div className="flex items-center gap-2">
+                                <img 
+                                  src={getProductImage(p.id)} 
+                                  alt={getProductName(p.id)}
+                                  className="w-8 h-8 object-cover rounded"
+                                />
+                                <span className="text-sm dark:text-white">{getProductName(p.id)}</span>
+                              </div>
+                              <div className="bg-primary text-white text-xs font-bold px-2 py-1 rounded">
+                                Qty: {p.quantity}
+                              </div>
                             </div>
-                          ) : (
-                            <div key={p.id} className="text-sm">Product #{p.id} × {p.quantity}</div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
@@ -636,9 +761,7 @@ const Packs = () => {
         )}
       </div>
 
-      {/* باقي الكود (Modals) يبقى كما هو */}
       {/* Product Selection Modal */}
-       {/* Product Selection Modal */}
       <Transition show={productModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={() => setProductModalOpen(false)}>
           <Transition.Child
@@ -664,8 +787,8 @@ const Packs = () => {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-4xl bg-background p-6 rounded-lg">
-                  <Dialog.Title className="text-lg font-bold mb-4">
+                <Dialog.Panel className="w-full max-w-4xl bg-background p-6 rounded-lg border dark:border-gray-700">
+                  <Dialog.Title className="text-lg font-bold mb-4 dark:text-white">
                     Select Products for Pack
                   </Dialog.Title>
                   
@@ -675,8 +798,8 @@ const Packs = () => {
                       return (
                         <div 
                           key={product.id} 
-                          className={`border p-3 rounded flex items-center justify-between ${
-                            selected ? 'border-primary bg-primary/5' : ''
+                          className={`border p-3 rounded-lg flex items-center justify-between transition-colors dark:border-gray-700 ${
+                            selected ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                           }`}
                         >
                           <div className="flex items-center gap-3 flex-1">
@@ -684,7 +807,7 @@ const Packs = () => {
                               type="checkbox" 
                               checked={!!selected}
                               onChange={() => toggleTempProduct(product.id)}
-                              className="h-4 w-4"
+                              className="h-4 w-4 text-primary rounded"
                             />
                             <img 
                               src={product.image} 
@@ -692,7 +815,7 @@ const Packs = () => {
                               className="w-12 h-12 object-cover rounded"
                             />
                             <div className="flex-1">
-                              <div className="font-medium">{product.name}</div>
+                              <div className="font-medium dark:text-white">{product.name}</div>
                               <div className="text-sm text-muted-foreground">
                                 ${product.price} • Stock: {product.stock}
                               </div>
@@ -700,20 +823,23 @@ const Packs = () => {
                           </div>
                           
                           {selected && (
-                            <Input 
-                              type="number"
-                              className="w-20"
-                              value={selected.quantity}
-                              min={1}
-                              onChange={e => setTempQuantity(product.id, parseInt(e.target.value) || 1)}
-                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm dark:text-white">Qty:</span>
+                              <Input 
+                                type="number"
+                                className="w-20"
+                                value={selected.quantity}
+                                min={1}
+                                onChange={e => setTempQuantity(product.id, parseInt(e.target.value) || 1)}
+                              />
+                            </div>
                           )}
                         </div>
                       );
                     })}
                   </div>
 
-                  <div className="flex justify-between items-center mt-4">
+                  <div className="flex justify-between items-center mt-6">
                     <div className="text-sm text-muted-foreground">
                       {tempSelection.length} product(s) selected
                     </div>
@@ -762,51 +888,122 @@ const Packs = () => {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-2xl bg-background p-6 rounded-lg">
-                  <Dialog.Title className="text-lg font-bold mb-4">
+                <Dialog.Panel className="w-full max-w-2xl bg-background p-6 rounded-lg border dark:border-gray-700">
+                  <Dialog.Title className="text-lg font-bold mb-4 dark:text-white">
                     Edit Pack
                   </Dialog.Title>
                   
                   {editPack && (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Input 
-                          placeholder="Pack Name"
-                          value={editPack.name}
-                          onChange={e => setEditPack({ ...editPack, name: e.target.value })}
-                        />
-                        <Input 
-                          type="number"
-                          step="0.01"
-                          placeholder="Price"
-                          value={editPack.price}
-                          onChange={e => setEditPack({ ...editPack, price: Number(e.target.value) })}
-                        />
-                        <Input 
-                          type="number"
-                          placeholder="Stock"
-                          value={editPack.stock}
-                          onChange={e => setEditPack({ ...editPack, stock: Number(e.target.value) })}
-                        />
-                      </div>
-                      
-                      <Input 
-                        type="file"
-                        accept="image/*"
-                        onChange={e => setEditPack({ 
-                          ...editPack, 
-                          image: e.target.files?.[0] || editPack.image 
-                        })}
-                      />
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Basic Information */}
+                        <div className="space-y-4">
+                          <Input 
+                            placeholder="Pack Name"
+                            value={editPack.name}
+                            onChange={e => setEditPack({ ...editPack, name: e.target.value })}
+                          />
+                          <Input 
+                            type="number"
+                            step="0.01"
+                            placeholder="Price"
+                            value={editPack.price}
+                            onChange={e => setEditPack({ ...editPack, price: Number(e.target.value) })}
+                          />
+                          <Input 
+                            type="number"
+                            placeholder="Stock"
+                            value={editPack.stock}
+                            onChange={e => setEditPack({ ...editPack, stock: Number(e.target.value) })}
+                          />
+                        </div>
 
-                      <Button onClick={() => openProductModal(editPack)}>
+                        {/* Image Upload */}
+                        <div className="space-y-4">
+                          <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center">
+                            {editImagePreview ? (
+                              <div className="relative">
+                                <img 
+                                  src={editImagePreview} 
+                                  alt="Preview" 
+                                  className="w-32 h-32 object-cover rounded-lg mx-auto"
+                                />
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2"
+                                  onClick={clearEditImage}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="py-8 relative">
+                                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Click to upload new image</p>
+                                <Input 
+                                  type="file" 
+                                  accept="image/*"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  onChange={handleEditImageUpload}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <Button onClick={() => openProductModal(editPack)} className="w-full">
                         Edit Products ({editPack.products.length})
                       </Button>
 
-                      <div className="flex gap-2 justify-end">
+                      {/* Selected Products in Edit Modal */}
+                      {editPack.products.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <h3 className="font-medium dark:text-white">Selected Products:</h3>
+                          {editPack.products.map(sp => (
+                            <div key={sp.id} className="flex items-center justify-between border p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                              <div className="flex items-center gap-3">
+                                <img 
+                                  src={getProductImage(sp.id)} 
+                                  alt={getProductName(sp.id)} 
+                                  className="w-10 h-10 object-cover rounded" 
+                                />
+                                <div>
+                                  <div className="font-medium dark:text-white">{getProductName(sp.id)}</div>
+                                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    Product ID: {sp.id}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm dark:text-white">Quantity:</span>
+                                <Input 
+                                  type="number" 
+                                  className="w-20" 
+                                  value={sp.quantity} 
+                                  min={1} 
+                                  onChange={e => setEditPack({ 
+                                    ...editPack, 
+                                    products: editPack.products.map(p => 
+                                      p.id === sp.id ? { ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) } : p
+                                    )
+                                  })} 
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 justify-end pt-4">
                         <Button 
                           variant="outline" 
-                          onClick={() => setEditModalOpen(false)}
+                          onClick={() => {
+                            setEditModalOpen(false);
+                            setEditPack(null);
+                            setEditImagePreview("");
+                          }}
                         >
                           Cancel
                         </Button>
