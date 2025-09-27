@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { DashboardHeader } from "@/components/dashboard-header"
+import { TokenCheck } from "@/components/TokenCheck";
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -9,6 +10,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <SidebarProvider>
+         <TokenCheck />
       <div className="min-h-screen flex w-full  bg-background">
         <DashboardSidebar />
         

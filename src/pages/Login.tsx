@@ -7,18 +7,22 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AnimatedDotsBackground } from "@/components/magicui/animated-grid-pattern";
+import { login } from "@/api/api";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
   const { toast } = useToast();
+  const { setUser } = useAuth();
+
   const [credentials, setCredentials] = useState({
-    email: "",
+    user_name: "",
     password: "",
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!credentials.email || !credentials.password) {
+    if (!credentials.user_name || !credentials.password) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -27,27 +31,41 @@ const Login = () => {
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Login successful! Redirecting to dashboard...",
-    });
+    try {
+      const res = await login(credentials.user_name, credentials.password);
+      setUser(res.data); // هيتخزن في الـ context
 
-    setTimeout(() => {
-      window.location.href = "/";
-    }, 1500);
+      toast({
+        title: "Success",
+        description: "Login successful! Redirecting...",
+      });
+
+      // Redirect بناءً على الدور
+      const role = res.data.role;
+      setTimeout(() => {
+        if (role === "admin") {
+          window.location.href = "/";
+        } else if (role === "employee") {
+          window.location.href = "/orders";
+        } else if (role === "customer") {
+          window.location.href = "/products";
+        } else {
+          window.location.href = "/login";
+        }
+      }, 1000);
+
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err?.response?.data?.message || "Login failed",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
-      {/* الخلفية الجديدة بالنقاط المتحركة */}
-      <AnimatedDotsBackground
-        numDots={80}
-        speed={0.5}
-        dotSize={1.5}
-        className="z-0"
-      />
-
-      {/* كارت اللوجين */}
+      <AnimatedDotsBackground numDots={80} speed={0.5} dotSize={1.5} className="z-0" />
       <Card className="relative z-10 w-full max-w-md bg-gradient-card border-0 shadow-lg backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
@@ -56,24 +74,22 @@ const Login = () => {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-          <p className="text-muted-foreground">
-            Sign in to your business dashboard
-          </p>
+          <p className="text-muted-foreground">Sign in to your business dashboard</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="user_name">Username</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
-                  type="email"
-                  value={credentials.email}
+                  id="user_name"
+                  type="text"
+                  value={credentials.user_name}
                   onChange={(e) =>
-                    setCredentials({ ...credentials, email: e.target.value })
+                    setCredentials({ ...credentials, user_name: e.target.value })
                   }
-                  placeholder="Enter your email"
+                  placeholder="Enter your username"
                   className="pl-10"
                 />
               </div>
@@ -88,30 +104,12 @@ const Login = () => {
                   type="password"
                   value={credentials.password}
                   onChange={(e) =>
-                    setCredentials({
-                      ...credentials,
-                      password: e.target.value,
-                    })
+                    setCredentials({ ...credentials, password: e.target.value })
                   }
                   placeholder="Enter your password"
                   className="pl-10"
                 />
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <input type="checkbox" id="remember" className="rounded" />
-                <Label htmlFor="remember" className="text-sm">
-                  Remember me
-                </Label>
-              </div>
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
             </div>
 
             <Button type="submit" className="w-full">
@@ -122,10 +120,7 @@ const Login = () => {
             <div className="text-center pt-4">
               <p className="text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
-                <Link
-                  to="/register"
-                  className="text-primary hover:underline font-medium"
-                >
+                <Link to="/register" className="text-primary hover:underline font-medium">
                   Sign up here
                 </Link>
               </p>

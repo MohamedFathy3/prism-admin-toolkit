@@ -1,4 +1,3 @@
-import { useState } from "react"
 import { 
   LayoutDashboard, 
   Users, 
@@ -9,7 +8,10 @@ import {
   FileText, 
   ClipboardList,
   LogIn,
-  UserPlus
+  UserPlus,
+  XCircle,
+  CheckCircle,
+  Loader
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -26,33 +28,32 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 
+import { useAuth } from "@/context/AuthContext";
+import { rolePermissions } from "@/config/roles";
+
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Employees", url: "/employees", icon: Users },
+  { title: "Customers", url: "/customers", icon: Users },
   { title: "Products", url: "/products", icon: Package },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
-  { title: "Create Order", url: "/create-order", icon: ClipboardList },
+  { title: "OrderCustomer", url: "/order/customer", icon: ShoppingCart },
+  { title: "orderscanceled", url: "/orderscanceled", icon: XCircle },
+  { title: "orderscompleted", url: "/orderscompleted", icon: CheckCircle },
+  { title: "OrderProcessing", url: "/OrderProcessing", icon: Loader },
   { title: "Packages", url: "/packages", icon: Archive },
-  { title: "Costing", url: "/costing", icon: Calculator },
-  { title: "Invoices", url: "/invoices", icon: FileText },
-]
+];
 
 const authItems = [
   { title: "Login", url: "/login", icon: LogIn },
   { title: "Register", url: "/register", icon: UserPlus },
-]
+];
 
 export function DashboardSidebar() {
-  const { state } = useSidebar()
-  const location = useLocation()
-  const currentPath = location.pathname
-
-  const isActive = (path: string) => currentPath === path
-  
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-primary text-primary-foreground font-medium" 
-      : `hover:bg-accent text-foreground` // إضافة text-foreground
+  const { state } = useSidebar();
+  const location = useLocation();
+  const { role } = useAuth(); // ✅ هنا بنجيب الدور
+  const allowed = rolePermissions[role] || [];
 
   return (
     <Sidebar collapsible="icon" className="bg-sidebar-background border-sidebar-border">
@@ -65,26 +66,28 @@ export function DashboardSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={({ isActive }) => 
-                        `flex items-center px-3 py-2 rounded-md transition-colors ${
-                          isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        }`
-                      }
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {state === "expanded" && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {navigationItems
+                .filter((item) => allowed.includes(item.title))
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end
+                        className={({ isActive }) =>
+                          `flex items-center px-3 py-2 rounded-md transition-colors ${
+                            isActive
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          }`
+                        }
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {state === "expanded" && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -95,29 +98,31 @@ export function DashboardSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {authItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      className={({ isActive }) => 
-                        `flex items-center px-3 py-2 rounded-md transition-colors ${
-                          isActive 
-                            ? "bg-sidebar-primary text-sidebar-primary-foreground" 
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        }`
-                      }
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {state === "expanded" && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {authItems
+                .filter((item) => allowed.includes(item.title))
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        className={({ isActive }) =>
+                          `flex items-center px-3 py-2 rounded-md transition-colors ${
+                            isActive
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          }`
+                        }
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {state === "expanded" && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
