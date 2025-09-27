@@ -702,7 +702,7 @@ const Packs = () => {
                                 <span className="text-sm dark:text-white">{getProductName(p.id)}</span>
                               </div>
                               <div className="bg-primary text-white text-xs font-bold px-2 py-1 rounded">
-                                Qty: {p.quantity}
+                                Qty: {p.stock}
                               </div>
                             </div>
                           ))}
