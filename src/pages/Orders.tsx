@@ -384,11 +384,7 @@ const CreateOrder = () => {
                             <span>Stock: {pack.stock}</span>
                           </div>
                         </div>
-                        {selectedPack?.id === pack.id && (
-                          <Badge variant="default" className="bg-green-600">
-                            Selected
-                          </Badge>
-                        )}
+                     
                       </div>
                     </div>
                   ))}
