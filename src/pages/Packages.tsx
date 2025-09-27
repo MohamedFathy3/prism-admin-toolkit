@@ -981,7 +981,7 @@ const Packs = () => {
                                 <Input 
                                   type="number" 
                                   className="w-20" 
-                                  value={sp.quantity} 
+                                  value={sp.stock} 
                                   min={1} 
                                   onChange={e => setEditPack({ 
                                     ...editPack, 
