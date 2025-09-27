@@ -12,6 +12,7 @@ import Orders from "./pages/Orders";
 import Orderscanceled from "./pages/Orderscanceled";
 import Orderscompleted from "./pages/Orderscompleted";
 import OrderProcessing from "./pages/OrdersProcessing";
+import OrdersPandding from "./pages/OrdersPandding";
 import CreateOrder from "./pages/Orders";
 import Packages from "./pages/Packages";
 import Costing from "./pages/Costing";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/orders" element={<DashboardLayout><Orders /></DashboardLayout>} />
               <Route path="/order/customer" element={<DashboardLayout><OrderCustomer /></DashboardLayout>} />
               <Route path="/orderscanceled" element={<DashboardLayout><Orderscanceled /></DashboardLayout>} />
+              <Route path="/orderspending" element={<DashboardLayout><OrdersPandding /></DashboardLayout>} />
               <Route path="/orderscompleted" element={<DashboardLayout><Orderscompleted /></DashboardLayout>} />
               <Route path="/OrderProcessing" element={<DashboardLayout><OrderProcessing /></DashboardLayout>} />
               <Route path="/orders/create/:customerId" element={<DashboardLayout><CreateOrder /></DashboardLayout>} />

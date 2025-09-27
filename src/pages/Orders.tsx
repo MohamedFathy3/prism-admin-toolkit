@@ -12,6 +12,7 @@ import { apiFetch } from "@/api/api";
 import { useToast } from "@/hooks/use-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, User, Calendar, Phone, MapPin } from "lucide-react";
+import { useAuth } from "@/context/AuthContext"; // تأكد من المسار الصحيح
 
 interface Pack {
   id: number;
@@ -54,7 +55,7 @@ const CreateOrder = () => {
   const params = useParams();
   const navigate = useNavigate();
   const customerIdFromUrl = Number(params.customerId);
-
+ const { user } = useAuth()
   const [packs, setPacks] = useState<Pack[]>([]);
   const [selectedPack, setSelectedPack] = useState<Pack | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -400,115 +401,156 @@ const CreateOrder = () => {
           <div className="space-y-4">
             {selectedPack ? (
               <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Order Details
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Selected Pack Info */}
-                    <div className="bg-accent/30 p-4 rounded-lg">
-                      <h4 className="font-semibold mb-3">Selected Pack</h4>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={selectedPack.image || "/placeholder-image.jpg"}
-                          alt={selectedPack.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                        <div>
-                          <p className="font-medium">{selectedPack.name}</p>
-                          <p className="text-primary font-bold">${formatPrice(selectedPack.price)}</p>
-                        </div>
-                      </div>
-                    </div>
+              <Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Calendar className="h-5 w-5" />
+      Order Details
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-6">
+    {/* Employee & Customer Info */}
+    <div className="grid gap-4 sm:grid-cols-2">
+      {/* Employee Info */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+          <User className="h-4 w-4" />
+          Employee
+        </h4>
+        <div className="space-y-1 text-sm">
+          <p className="text-blue-700 dark:text-blue-300">
+            <strong>Name:</strong> {user?.user_name || "N/A"}
+          </p>
+          <p className="text-blue-700 dark:text-blue-300">
+            <strong>Role:</strong> {user?.role || "N/A"}
+          </p>
+          <p className="text-blue-700 dark:text-blue-300">
+            <strong>phone:</strong> {user?.phone || "N/A"}
+          </p>
+        </div>
+      </div>
 
-                    {/* Order Form */}
-                    <div className="space-y-4">
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="orderStatus">Order Status</Label>
-                          <Select value={orderStatus} onValueChange={setOrderStatus}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="processing">Processing</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+      {/* Customer Info */}
+      <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+        <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2 flex items-center gap-2">
+          <User className="h-4 w-4" />
+          Customer
+        </h4>
+        <div className="space-y-1 text-sm">
+          <p className="text-green-700 dark:text-green-300">
+            <strong>Name:</strong> {customer?.name || "N/A"}
+          </p>
+          <p className="text-green-700 dark:text-green-300">
+            <strong>Phone:</strong> {customer?.phone || "N/A"}
+          </p>
+          <p className="text-green-700 dark:text-green-300">
+            <strong>Address:</strong> {customer?.address || "N/A"}
+          </p>
+        </div>
+      </div>
+    </div>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="deliveryStatus">Delivery Status</Label>
-                          <Select value={deliveryStatus} onValueChange={setDeliveryStatus}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+    {/* Selected Pack Info */}
+    <div className="bg-accent/30 p-4 rounded-lg">
+      <h4 className="font-semibold mb-3">Selected Pack</h4>
+      <div className="flex items-center gap-3">
+        <img
+          src={selectedPack.image || "/placeholder-image.jpg"}
+          alt={selectedPack.name}
+          className="w-12 h-12 object-cover rounded"
+        />
+        <div>
+          <p className="font-medium">{selectedPack.name}</p>
+          <p className="text-primary font-bold">${formatPrice(selectedPack.price)}</p>
+        </div>
+      </div>
+    </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="contactMethod">Contact Method</Label>
-                        <Select value={contactMethod} onValueChange={setContactMethod}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="phone">Phone</SelectItem>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="store">Store</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+    {/* Order Form */}
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="orderStatus">Order Status</Label>
+          <Select value={orderStatus} onValueChange={setOrderStatus}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="shippingDate">Shipping Date & Time</Label>
-                        <Input
-                          type="datetime-local"
-                          value={shippingDate.replace(' ', 'T')}
-                          onChange={(e) => setShippingDate(e.target.value.replace('T', ' '))}
-                        />
-                      </div>
+        <div className="space-y-2">
+          <Label htmlFor="deliveryStatus">Delivery Status</Label>
+          <Select value={deliveryStatus} onValueChange={setDeliveryStatus}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="delivered">Delivered</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="note">Notes</Label>
-                        <Textarea
-                          placeholder="Add any special instructions or notes..."
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                          rows={3}
-                        />
-                      </div>
-                    </div>
+      <div className="space-y-2">
+        <Label htmlFor="contactMethod">Contact Method</Label>
+        <Select value={contactMethod} onValueChange={setContactMethod}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="phone">Phone</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
+            <SelectItem value="store">Store</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-                    {/* Submit Button */}
-                    <Button 
-                      onClick={handleCreateOrder} 
-                      disabled={loading}
-                      className="w-full h-12 text-lg"
-                      size="lg"
-                    >
-                      {loading ? (
-                        <span className="flex items-center gap-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                          Creating Order...
-                        </span>
-                      ) : (
-                        `Create Order - $${formatPrice(selectedPack.price)}`
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
+      <div className="space-y-2">
+        <Label htmlFor="shippingDate">Shipping Date & Time</Label>
+        <Input
+          type="datetime-local"
+          value={shippingDate.replace(' ', 'T')}
+          onChange={(e) => setShippingDate(e.target.value.replace('T', ' '))}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="note">Notes</Label>
+        <Textarea
+          placeholder="Add any special instructions or notes..."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={3}
+        />
+      </div>
+    </div>
+
+    {/* Submit Button */}
+    <Button 
+      onClick={handleCreateOrder} 
+      disabled={loading}
+      className="w-full h-12 text-lg"
+      size="lg"
+    >
+      {loading ? (
+        <span className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+          Creating Order...
+        </span>
+      ) : (
+        `Create Order - $${formatPrice(selectedPack.price)}`
+      )}
+    </Button>
+  </CardContent>
+</Card>
 
                 {/* API Response Display */}
                 {apiResponse && (

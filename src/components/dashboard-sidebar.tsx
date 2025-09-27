@@ -36,14 +36,13 @@ const navigationItems = [
   { title: "Employees", url: "/employees", icon: Users },
   { title: "Customers", url: "/customers", icon: Users },
   { title: "Products", url: "/products", icon: Package },
-  { title: "Orders", url: "/orders", icon: ShoppingCart },
   { title: "OrderCustomer", url: "/order/customer", icon: ShoppingCart },
-  { title: "orderscanceled", url: "/orderscanceled", icon: XCircle },
-  { title: "orderscompleted", url: "/orderscompleted", icon: CheckCircle },
-  { title: "OrderProcessing", url: "/OrderProcessing", icon: Loader },
+  { title: "orders_canceled", url: "/orderscanceled", icon: XCircle },
+  { title: "orders_completed", url: "/orderscompleted", icon: CheckCircle },
+  { title: "Order_Processing", url: "/OrderProcessing", icon: Loader },
+  { title: "Orders_Pending", url: "/OrdersPending", icon: Loader },
   { title: "Packages", url: "/packages", icon: Archive },
 ];
-
 const authItems = [
   { title: "Login", url: "/login", icon: LogIn },
   { title: "Register", url: "/register", icon: UserPlus },
