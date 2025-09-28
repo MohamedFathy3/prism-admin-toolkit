@@ -19,6 +19,8 @@ const Login = () => {
     password: "",
   });
 
+  const [rememberMe, setRememberMe] = useState(false); // حالة "تذكرني"
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -57,10 +59,15 @@ const Login = () => {
     } catch (err: any) {
       toast({
         title: "Error",
-        description: err?.response?.data?.message || "Login failed",
-        variant: "destructive",
+      description: err?.response?.data?.message || "Login failed",
+      variant: "destructive",
       });
     }
+  };
+
+  // دالة تغيير حالة "تذكرني"
+  const toggleRememberMe = () => {
+    setRememberMe((prevState) => !prevState);
   };
 
   return (
@@ -112,7 +119,29 @@ const Login = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
+            {/* زر التبديل لتفعيل "تذكرني" */}
+            <div className="flex justify-between items-center pt-4">
+              <Label
+                htmlFor="rememberMeToggle"
+                className="text-sm text-muted-foreground"
+              >
+                Remember me
+              </Label>
+              <div
+                onClick={toggleRememberMe}
+                className={`relative inline-block w-12 h-6 transition-all duration-300 rounded-full cursor-pointer ${
+                  rememberMe ? "bg-primary" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-all duration-300 transform ${
+                    rememberMe ? "translate-x-6" : ""
+                  }`}
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full mt-4">
               <LogIn className="mr-2 h-4 w-4" />
               Sign In
             </Button>
